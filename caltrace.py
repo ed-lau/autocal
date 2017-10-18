@@ -30,8 +30,8 @@ class CalciumTrace(object):
         import re
 
         # Hold the sheet and column data after sanitizing
-        self.sheetname = re.sub(r'[^\w\P]', '', sheetname)
-        self.colname = re.sub(r'[^\w\P]', '', colname)
+        self.sheetname = re.sub(r'[^\w\\P]', '', sheetname)
+        self.colname = re.sub(r'[^\w\\P]', '', colname)
         self.tm = tm
         self.dt = dt
         self.bg = bg
