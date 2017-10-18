@@ -8,24 +8,25 @@ lau1@stanford.edu
 """
 
 
-
 import matplotlib.pyplot as plt
+import matplotlib.patches as pch
 import openpyxl as xl
-import caltrace
-import models
+import caltrace, tracecol, tracelet, models
+import os
 
-def parsefile(path):
+def parsefile(args):
     """
     Parse the excel spreadsheet, assuming it is a standard output from the calcium imager,
     Take relevant columns and create trace objects
 
+    Usage:  'old/12-01-16 A slide.xlsx'
     :param path:
     :return:
     """
 
 
 
-    path = 'old/12-01-16 A slide.xlsx'
+    path = args.path
 
 
     xl0 = xl.load_workbook(filename=path)
@@ -69,7 +70,7 @@ def parsefile(path):
 
 
             y_tolerance = 0.0005
-            x_tolerance = 3
+            x_tolerance = 7
 
             rise_start = []
             rise_end = []
@@ -94,40 +95,53 @@ def parsefile(path):
 
 
             # Plot out the figures
-            plt.figure(1)
-            plt.subplot(611)
-            plt.plot(trce.median_time, trce.ratio)
-            plt.title('Step 1: load raw trace')
-            # plt.plot([median_time[i] for i in rise_start],
-            #          [ratio[i] for i in rise_start], 'ro')
-            # plt.plot([median_time[i] for i in rise_end],
-            #          [ratio[i] for i in rise_end], 'ro')
+            fig = plt.figure()
+            fig.suptitle(trce.sheetname + trce.colname, fontsize=14)
+
+            splt = fig.add_subplot(511)
+            splt.plot(trce.median_time, trce.ratio)
+            ttl = pch.Patch(color='red', label='1: raw trace')
+            splt.legend(handles=[ttl], fontsize=6)
+            splt.set_xlabel('t')
+            splt.set_ylabel('ratio')
 
             # Plot out the smoothened trace
-            plt.subplot(612)
-            plt.plot(trce.median_time, trce.smooth)
-            plt.title('Step 2: apply low pass polynomial filter')
+            splt = fig.add_subplot(512)
+            splt.plot(trce.median_time, trce.smooth)
+            ttl = pch.Patch(color='red', label='2: low pass polynomial filter')
+            splt.legend(handles=[ttl], fontsize=6)
             # plt.plot([median_time[i] for i in rise_start],
             #          [smooth[i] for i in rise_start], 'ro')
             # plt.plot([median_time[i] for i in rise_end],
             #          [smooth[i] for i in rise_end], 'ro')
 
-            plt.subplot(615)
+            splt = fig.add_subplot(513)
             # Plot out the differential
-            plt.plot(trce.median_time[1:], trce.deriv)
-            plt.title('Step 3: take first derivative for peak detection')
-            plt.plot([trce.median_time[i] for i in rise_start],
+            splt.plot(trce.median_time[1:], trce.deriv)
+            splt.plot([trce.median_time[i] for i in rise_start],
                      [trce.deriv[i] for i in rise_start], 'ro')
-            plt.plot([trce.median_time[i] for i in rise_end],
+            splt.plot([trce.median_time[i] for i in rise_end],
                      [trce.deriv[i] for i in rise_end], 'ro')
+            ttl = pch.Patch(color='red', label='3: peak detection in derivative')
+            splt.legend(handles=[ttl], fontsize=6)
 
-            plt.subplot(616)
-            plt.plot(trce.median_time, trce.ratio)
-            plt.title('Step 1: apply maxima and minima to raw traces')
-            plt.plot([trce.median_time[i] for i in rise_start],
+            splt = fig.add_subplot(514)
+            splt.plot(trce.median_time, trce.ratio)
+            splt.plot([trce.median_time[i] for i in rise_start],
                      [trce.ratio[i] for i in rise_start], 'ro')
-            plt.plot([trce.median_time[i] for i in rise_end],
+            splt.plot([trce.median_time[i] for i in rise_end],
                      [trce.ratio[i] for i in rise_end], 'ro')
+            ttl = pch.Patch(color='red', label='4: apply peaks to raw')
+            splt.legend(handles=[ttl], fontsize=6)
+
+            splt = fig.add_subplot(515)
+            splt.plot(trce.median_time, trce.ratio)
+            splt.plot([trce.median_time[i] for i in rise_start],
+                     [trce.ratio[i] for i in rise_start], 'ro')
+            splt.plot([trce.median_time[i] for i in rise_end],
+                     [trce.ratio[i] for i in rise_end], 'ro')
+            ttl = pch.Patch(color='red', label='5: fit kinetic curve')
+            splt.legend(handles=[ttl], fontsize=6)
 
             # From the first peak (rise_end) to the next trough (rise_start),
             # Define an interval of the calcium trace and make that into a tracelet object
@@ -136,75 +150,53 @@ def parsefile(path):
 
             for (start, end) in tracelet_intervals:
                 print(trce.smooth[range(start, end)])
-                tracelet = Tracelet(tm=trce.median_time[start:end],
+                trcelt = tracelet.Tracelet(tm=trce.median_time[start:end],
                                     dt=trce.ratio[start:end])
-                tracelet.optimize()
+                trcelt.optimize()
 
-                plt.plot(tracelet.x, tracelet.y)
-                plt.plot(tracelet.x, [models.model(x - tracelet.x[0], tracelet.opt_k, tracelet.y[0], tracelet.y[-1]) for x in tracelet.x])
-
-
-            plt.savefig(trce.sheetname + trce.colname + '.png')
-
-        print(sheet)
+                splt.plot(trcelt.x, trcelt.y, color='purple')
+                splt.plot(trcelt.x,
+                          [models.model(x - trcelt.x[0], trcelt.opt_k, trcelt.y[0], trcelt.y[-1]) for x in trcelt.x],
+                          color='green')
+                splt.text(trcelt.x[0], trcelt.y[0], 'tau:' + str(1/trcelt.opt_k), color='red', fontsize=3)
 
 
+            # Save the picutre and then close the plot.
 
-class TraceCollection(object):
-    """
-    Object to hold all traces of the Excel file for summary statistics
-
-    """
-
-    def __init__(self):
-        pass
+            # Create directory if not exists
+            os.makedirs(args.out, exist_ok=True)
+            save_path = os.path.join(args.out, trce.sheetname + trce.colname + '.png')
+            fig.savefig(save_path, dpi=300)
+            plt.close()
 
 
-class Tracelet(object):
-    """
-    Object to hold each downward slope of a trace for optimization.
-
-    """
-
-    def __init__(self, tm, dt):
-        """
-        Initialize, using time as x axis and data as y axis.
-        :param tm:
-        :param dt:
-        """
-        self.x = tm
-        self.y = dt
-        self.opt_k = 1
-        self.tau = 1
-        self.R2 = 0
 
 
-    def objective_function(self, k):
-        """
-        This is the cost function we want to minimize
-        :return:
-        """
-        import models
-        y0 = self.y[0]
-        y1 = self.y[-1]
-        y = self.y
+#
+# Code for running main with parsed arguments from command line
+#
 
-        ypred = [models.model(x-self.x[0], k, y0, y1) for x in self.x]
+if __name__ == "__main__":
+    import argparse
 
-        return sum([(y[i] - ypred[i])**2 for i in range(len(y))])
+    parser = argparse.ArgumentParser(description='calctau reads in calcium trace data and performs curvefitting')
 
 
-    def optimize(self):
-        """
-        Perform optimization to yield best-fitted k (x), tau, SE, and R2, etc.
+    parser.add_argument('path', help='path to calcium imaging spreadsheed')
+    parser.add_argument('-o', '--out', help='path to output files',
+                              default='out')
+    parser.add_argument('-v', '--verbose', action='store_true', help='verbose error messages.')
 
-        :return:
-        """
-        import scipy.optimize
-        res = scipy.optimize.minimize(self.objective_function, 1)
+    parser.set_defaults(func=parsefile)
 
-        self.opt_k = res.x
-        self.tau = 1/res.x
-        print(res.x)
+    # Print help message if no arguments are given
+    import sys
+    if len(sys.argv[1:]) == 0:
+        parser.print_help()
+        parser.exit()
 
+    # Parse all the arguments
+    args = parser.parse_args()
 
+    # Run the function in the argument
+    args.func(args)
