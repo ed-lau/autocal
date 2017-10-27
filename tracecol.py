@@ -10,7 +10,7 @@ lau1@stanford.edu
 
 class TraceCollection(object):
     """
-    Object to hold all traces of the Excel file for summary statistics
+    Object to hold a collection of traces, which corresponds to one tab in the Excel sheet, for summary statistics
 
     """
 
