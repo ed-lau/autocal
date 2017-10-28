@@ -186,7 +186,8 @@ def parsefile(args):
                 splt.plot(trcelt.x,
                           [models.model_zero(x - trcelt.x[0], trcelt.opt_k, trcelt.y[0], trcelt.y[-1]) for x in trcelt.x],
                           color='green')
-                splt.text(trcelt.x[0], trcelt.y[0], 'tau:' + str(1/trcelt.opt_k), color='red', fontsize=3)
+                splt.text(trcelt.x[0], trcelt.y[0], 'tau:' + str(1/trcelt.opt_tau), color='red', fontsize=3)
+                splt.text(trcelt.x[0], trcelt.y[0]-0.1, 'R2:' + str(1 / trcelt.R2), color='red', fontsize=3)
 
 
             # Save the picutre and then close the plot.
