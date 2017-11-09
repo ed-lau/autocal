@@ -30,6 +30,7 @@ class Tracelet(object):
         self.opt_y1 = 0.5  # Optimized plateau value
         self.opt_tau = 1  # Optimized tau (1/k)
         self.R2 = 0  # R2 of optimization
+        self.opt_success = False
 
     def objective_function_o0p1(self, para):
         """
@@ -126,6 +127,7 @@ class Tracelet(object):
             res = scipy.optimize.minimize(self.objective_function_o0p1, 2)
 
             if res.success:
+                self.opt_success = True
                 self.opt_k = res.x
                 print(res.x)
 
@@ -138,7 +140,9 @@ class Tracelet(object):
             res = scipy.optimize.minimize(self.objective_function_o1p1, 2)
 
             if res.success:
+                self.opt_success = True
                 self.opt_k = res.x
+                self.opt_y1 = self.y[-1]
                 print(res.x)
 
             else:
@@ -146,11 +150,15 @@ class Tracelet(object):
 
         # Two-parameter first-order fitting (only optimizing for k)
         elif model == 2:
-            res = scipy.optimize.minimize(self.objective_function_o1p2, np.array([2, 0.5]),
+            maxiter = 500
+            res = scipy.optimize.minimize(self.objective_function_o1p2, np.array([2, self.y[-1]]),
                                           method='Nelder-Mead',  # Use Nelder-Mead simplex for multivariate
-                                          options={'maxiter': 100})
+                                          options={'maxiter': maxiter})
 
-            if res.success:
+            print(res.message)
+
+            if res.success or res.nit == maxiter:
+                self.opt_success = True
                 self.opt_k = res.x[0]
                 self.opt_y1 = res.x[1]
                 print(res.x)
@@ -162,9 +170,13 @@ class Tracelet(object):
         if not res.success:
             print("Optimization unsuccessful")  # Throw error later
 
-        self.opt_tau = 1 / self.opt_k
+        self.opt_tau = 1. / self.opt_k
 
+        print(res.fun)
+        print(sum((self.y - np.mean(self.y)) ** 2))
+        print((res.fun/sum((self.y - np.mean(self.y)) ** 2)))
         # Calculate coefficient of determination as one minus residual sum of squares over total sum of squares
-        self.R2 = 1 - (res.fun/sum((self.y - np.mean(self.y)) ** 2))
+        self.R2 = 1. - (res.fun/sum((self.y - np.mean(self.y)) ** 2))
+        print(self.R2)
 
         return True

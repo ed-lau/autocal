@@ -115,7 +115,7 @@ class CalciumTrace(object):
             self.ratio_has_been_flipped = True
 
         # If the median is not above the threshold, then verify the ratio is correct.
-        else:
+        elif np.median(self.deriv) <= deriv_median_tol:
             self.ratio_verified = True
 
 

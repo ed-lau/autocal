@@ -19,7 +19,8 @@ def parsefile(args):
     Parse the excel spreadsheet, assuming it is a standard output from the calcium imager,
     Take relevant columns and create trace objects
 
-    Usage:  'data/12-01-16 A slide.xlsx'
+    Usage:  python main.py 'data/12-01-16 A slide.xlsx'
+    Usage: python main.py 'data/6-27-17 204_test.xlsx'
     :param path:
     :return:
     """
@@ -71,6 +72,7 @@ def parsefile(args):
             # For the newly created Trace object, create the 340/380 ratio from raw trace data
             trce.make_ratio()
 
+            while_counter = 1
             # Smoothen, get derivative, check whether derivative is below 0, if not, flip then smoothen again
             while not trce.ratio_verified:
                 # Run a low pass filter to smoothen the raw trace, then get the first derivative
@@ -84,6 +86,8 @@ def parsefile(args):
                 # when run the second time with the flipped trace, this ensures the flipped trace is smoothened
                 # With the same parameters (size, order, etc.)
                 trce.correct_ratio(deriv_median_tol=0)
+                while_counter += 1
+                print(while_counter)
 
 
             #
@@ -92,12 +96,12 @@ def parsefile(args):
 
             # Peak detection tolerance parameters (these will be specifiable in argparse later).
             y_tolerance = 0.0005
-            x_tolerance = 7
+            x_tolerance = 10
 
             # List of times when the traces begin to rise, and stops rising
             rise_starts = []
             rise_ends = []
-            rise_intervals = []
+            rise_interval = []
 
             for i in range(len(trce.deriv)):
 
@@ -117,7 +121,7 @@ def parsefile(args):
             # Rise times are calculated as the time interval between the start and end of each rise cycles
             assert len(rise_starts) == len(rise_ends), 'Check this trace - incorrect number of cycles detected.'
 
-            rise_t = [trce.median_time[rise_starts[i]] - trce.median_time[rise_ends[i]] for i in
+            rise_t = [trce.median_time[rise_ends[i]] - trce.median_time[rise_starts[i]] for i in
                       range(len(rise_starts))]
 
 
@@ -146,28 +150,28 @@ def parsefile(args):
             splt = fig.add_subplot(513)
             # Plot out the differential
             splt.plot(trce.median_time[1:], trce.deriv)
-            splt.plot([trce.median_time[i] for i in rise_start],
-                     [trce.deriv[i] for i in rise_start], 'ro')
-            splt.plot([trce.median_time[i] for i in rise_end],
-                     [trce.deriv[i] for i in rise_end], 'ro')
+            splt.plot([trce.median_time[i] for i in rise_starts],
+                     [trce.deriv[i] for i in rise_starts], 'ro')
+            splt.plot([trce.median_time[i] for i in rise_ends],
+                     [trce.deriv[i] for i in rise_ends], 'ro')
             ttl = pch.Patch(color='red', label='3: peak detection in derivative')
             splt.legend(handles=[ttl], fontsize=6)
 
             splt = fig.add_subplot(514)
             splt.plot(trce.median_time, trce.ratio)
-            splt.plot([trce.median_time[i] for i in rise_start],
-                     [trce.ratio[i] for i in rise_start], 'ro')
-            splt.plot([trce.median_time[i] for i in rise_end],
-                     [trce.ratio[i] for i in rise_end], 'ro')
+            splt.plot([trce.median_time[i] for i in rise_starts],
+                     [trce.ratio[i] for i in rise_starts], 'ro')
+            splt.plot([trce.median_time[i] for i in rise_ends],
+                     [trce.ratio[i] for i in rise_ends], 'ro')
             ttl = pch.Patch(color='red', label='4: apply peaks to raw')
             splt.legend(handles=[ttl], fontsize=6)
 
             splt = fig.add_subplot(515)
             splt.plot(trce.median_time, trce.ratio)
-            splt.plot([trce.median_time[i] for i in rise_start],
-                     [trce.ratio[i] for i in rise_start], 'ro')
-            splt.plot([trce.median_time[i] for i in rise_end],
-                     [trce.ratio[i] for i in rise_end], 'ro')
+            splt.plot([trce.median_time[i] for i in rise_starts],
+                     [trce.ratio[i] for i in rise_starts], 'ro')
+            splt.plot([trce.median_time[i] for i in rise_ends],
+                     [trce.ratio[i] for i in rise_ends], 'ro')
             ttl = pch.Patch(color='red', label='5: fit kinetic curve')
             splt.legend(handles=[ttl], fontsize=6)
 
@@ -180,14 +184,23 @@ def parsefile(args):
                 print(trce.smooth[range(start, end)])
                 trcelt = tracelet.Tracelet(tm=trce.median_time[start:end],
                                            dt=trce.ratio[start:end])
-                trcelt.optimize()
+                trcelt.optimize(model=2)
 
-                splt.plot(trcelt.x, trcelt.y, color='purple')
-                splt.plot(trcelt.x,
-                          [models.model_zero(x - trcelt.x[0], trcelt.opt_k, trcelt.y[0], trcelt.y[-1]) for x in trcelt.x],
-                          color='green')
-                splt.text(trcelt.x[0], trcelt.y[0], 'tau:' + str(1/trcelt.opt_tau), color='red', fontsize=3)
-                splt.text(trcelt.x[0], trcelt.y[0]-0.1, 'R2:' + str(1 / trcelt.R2), color='red', fontsize=3)
+                if trcelt.opt_success:
+
+                    splt.plot(trcelt.x, trcelt.y, color='purple')
+                    splt.plot(trcelt.x,
+                              #[models.model_zero(x - trcelt.x[0], trcelt.opt_k, trcelt.y[0], trcelt.y[-1]) for x in trcelt.x],
+                              [models.model_first(x - trcelt.x[0], trcelt.opt_k, trcelt.y[0], trcelt.opt_y1) for x in
+                               trcelt.x],
+                              color='green')
+                    splt.text(trcelt.x[0],
+                              trcelt.y[0],
+                              'k:' + (str(trcelt.opt_k))[:5] + '\n' +
+                              'tau:' + (str(trcelt.opt_tau))[:5] + '\n' +
+                              'R2:' + (str(trcelt.R2))[:5],
+                              color='red',
+                              fontsize=5)
 
 
             # Save the picutre and then close the plot.
