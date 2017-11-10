@@ -1,6 +1,6 @@
 """
 calctau
-Calculates Tau from Ca++ imaging data
+Automatic analysis of alcium imaging data
 
 Edward Lau 2017
 lau1@stanford.edu
@@ -363,7 +363,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
                                      description='''\
-    CalcTau v.0.0.2
+    CalcTau v.0.2.0
     Edward Lau 2017 - lau1@stanford.edu
     Reads calcium trace data and fits kinetic curves.''')
 
