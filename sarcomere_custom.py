@@ -1,6 +1,5 @@
 """
-calctau - sarcomere custom file
-Calculates Tau from Ca++ imaging data
+Sarcomere Custom Analysis (Standalone)
 
 Edward Lau 2017
 lau1@stanford.edu

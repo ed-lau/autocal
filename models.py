@@ -1,3 +1,12 @@
+"""
+AutoCal
+Automatic analysis of Calcium imaging data
+
+Edward Lau 2017
+lau1@stanford.edu
+
+"""
+
 def model_first(x, k, y0, y1):
     """
     One-compartment first-order exponential decay model

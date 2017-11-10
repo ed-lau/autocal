@@ -1,6 +1,6 @@
 """
-calctau
-Automatic analysis of alcium imaging data
+AutoCal
+Automatic analysis of Calcium imaging data
 
 Edward Lau 2017
 lau1@stanford.edu
