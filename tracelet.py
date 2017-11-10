@@ -14,7 +14,7 @@ class Tracelet(object):
 
     """
 
-    def __init__(self, tm, dt):
+    def __init__(self, tm, dt, sm):
         """
         Initialize, using time as x axis and data as y axis.
 
@@ -22,8 +22,9 @@ class Tracelet(object):
         :param dt: list data point (340/380 ratio) within the tracelet (y axis in optimization)
 
         """
-        self.x = tm
-        self.y = dt
+        self.x = tm         # Time (x axis)
+        self.y = dt         # Ratio (y axis)
+        self.y_sm = sm      # Smoothened Ratio (alternative y axis)
 
         # Private
         self.opt_k = 1  # Optimized k value

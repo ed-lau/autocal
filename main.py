@@ -9,10 +9,12 @@ lau1@stanford.edu
 
 
 import matplotlib.pyplot as plt
+import matplotlib.mlab as mlab
 import matplotlib.patches as pch
 import openpyxl as xl
 import caltrace, tracecol, tracelet, models
 import os, sys, argparse
+import numpy as np
 
 def parsefile(args):
     """
@@ -87,7 +89,10 @@ def parsefile(args):
                 # With the same parameters (size, order, etc.)
                 trce.correct_ratio(deriv_median_tol=0)
                 while_counter += 1
-                print(while_counter)
+
+                print('Flipping debug counter:' + str(while_counter))
+                if while_counter > 10:
+                    break
 
 
             #
@@ -118,15 +123,35 @@ def parsefile(args):
                         rise_ends.append(rise_interval[-1])
                     rise_interval = []
 
+
+            #
+            # CALCULATE ATTRIBUTES
+            #
+
+            #
             # Rise times are calculated as the time interval between the start and end of each rise cycles
+            #
             assert len(rise_starts) == len(rise_ends), 'Check this trace - incorrect number of cycles detected.'
 
             rise_t = [trce.median_time[rise_ends[i]] - trce.median_time[rise_starts[i]] for i in
                       range(len(rise_starts))]
 
+            trcecl.rise_ts += rise_t
+
+            #
+            # Rise amplitudes are the corresonding increase in ratios during the same intervals
+            #
+
+            amplitude = [trce.ratio[rise_ends[i]] - trce.ratio[rise_starts[i]] for i in
+                      range(len(rise_starts))]
+
+            trcecl.amplitudes += amplitude
 
 
+            #
             # Plot out the figures
+            #
+
             fig = plt.figure()
             fig.suptitle(trce.sheetname + trce.colname, fontsize=14)
 
@@ -183,7 +208,35 @@ def parsefile(args):
             for (start, end) in tracelet_intervals:
                 print(trce.smooth[range(start, end)])
                 trcelt = tracelet.Tracelet(tm=trce.median_time[start:end],
-                                           dt=trce.ratio[start:end])
+                                           dt=trce.ratio[start:end],
+                                           sm=trce.smooth[start:end])
+
+
+                #
+                # CALCULATE DECAY ATTRIBUTES FOR TRACELETS
+                # (Can probably also do this at the trace level but code seems longer)
+                #
+
+                ratio_at_90pct = (0.9 * (np.max(trcelt.y_sm)-trcelt.y_sm[-1])) + trcelt.y_sm[-1]
+                ratio_at_50pct = (0.5 * (np.max(trcelt.y_sm) - trcelt.y_sm[-1])) + trcelt.y_sm[-1]
+                ratio_at_10pct = (0.1 * (np.max(trcelt.y_sm) - trcelt.y_sm[-1])) + trcelt.y_sm[-1]
+
+                interval_t10 = [trcelt.x[i] for i in range(len(trcelt.x)) if trcelt.y_sm[i] > ratio_at_90pct]
+                interval_t50 = [trcelt.x[i] for i in range(len(trcelt.x)) if trcelt.y_sm[i] > ratio_at_50pct]
+                interval_t90 = [trcelt.x[i] for i in range(len(trcelt.x)) if trcelt.y_sm[i] > ratio_at_10pct]
+
+                try:
+                    trcecl.t10s += [interval_t10[-1]-interval_t10[0]]
+                    trcecl.t50s += [interval_t50[-1] - interval_t50[0]]
+                    trcecl.t90s += [interval_t90[-1] - interval_t90[0]]
+                    trcecl.t100s += [trcelt.x[-1] - trcelt.x[0]]
+
+                except IndexError:
+                    pass
+
+                #
+                # Do curvefitting for tracelet
+                #
                 trcelt.optimize(model=2)
 
                 if trcelt.opt_success:
@@ -202,6 +255,8 @@ def parsefile(args):
                               color='red',
                               fontsize=5)
 
+                    trcecl.taus += [trcelt.opt_tau]
+
 
             # Save the picutre and then close the plot.
 
@@ -210,6 +265,92 @@ def parsefile(args):
             save_path = os.path.join(args.out, trce.sheetname + trce.colname + '.png')
             fig.savefig(save_path, dpi=300)
             plt.close()
+
+
+        num_bins = 10
+        fig = plt.figure()
+        fig.suptitle(trce.sheetname , fontsize=14)
+
+        splt = fig.add_subplot(321)
+        n, bins, patches = plt.hist(trcecl.rise_ts, num_bins, normed=1, facecolor='blue', alpha=0.5)
+        y = mlab.normpdf(bins, np.mean(trcecl.rise_ts), np.std(trcecl.rise_ts))
+        splt.plot(bins, y, 'r--')
+        ttl = pch.Patch(color='red', label='Rise time \n mean:' +\
+                                           str(np.round(np.mean(trcecl.rise_ts), 2)) + '\n sd:' +\
+                                           str(np.round(np.std(trcecl.rise_ts), 2)))
+        splt.legend(handles=[ttl], fontsize=6)
+
+        splt = fig.add_subplot(322)
+        n, bins, patches = plt.hist(trcecl.t10s, num_bins, normed=1, facecolor='blue', alpha=0.5)
+        y = mlab.normpdf(bins, np.mean(trcecl.t10s), np.std(trcecl.t10s))
+        splt.plot(bins, y, 'r--')
+        ttl = pch.Patch(color='red', label='T10 \n mean:' + \
+                                           str(np.round(np.mean(trcecl.t10s), 2)) + '\n sd:' + \
+                                           str(np.round(np.std(trcecl.t10s), 2)))
+        splt.legend(handles=[ttl], fontsize=6)
+
+        splt = fig.add_subplot(323)
+        n, bins, patches = plt.hist(trcecl.t50s, num_bins, normed=1, facecolor='blue', alpha=0.5)
+        y = mlab.normpdf(bins, np.mean(trcecl.t50s), np.std(trcecl.t50s))
+        splt.plot(bins, y, 'r--')
+        ttl = pch.Patch(color='red', label='T50 \n mean:' + \
+                                           str(np.round(np.mean(trcecl.t50s), 2)) + '\n sd:' + \
+                                           str(np.round(np.std(trcecl.t50s), 2)))
+        splt.legend(handles=[ttl], fontsize=6)
+
+        splt = fig.add_subplot(324)
+        n, bins, patches = plt.hist(trcecl.t90s, num_bins, normed=1, facecolor='blue', alpha=0.5)
+        y = mlab.normpdf(bins, np.mean(trcecl.t90s), np.std(trcecl.t90s))
+        splt.plot(bins, y, 'r--')
+        ttl = pch.Patch(color='red', label='T90 \n mean:' + \
+                                           str(np.round(np.mean(trcecl.t90s), 2)) + '\n sd:' + \
+                                           str(np.round(np.std(trcecl.t90s), 2)))
+        splt.legend(handles=[ttl], fontsize=6)
+
+        splt = fig.add_subplot(325)
+        n, bins, patches = plt.hist(trcecl.amplitudes, num_bins, normed=1, facecolor='blue', alpha=0.5)
+        y = mlab.normpdf(bins, np.mean(trcecl.amplitudes), np.std(trcecl.amplitudes))
+        splt.plot(bins, y, 'r--')
+        ttl = pch.Patch(color='red', label='Amplitude \n mean:' + \
+                                           str(np.round(np.mean(trcecl.amplitudes), 2)) + '\n sd:' + \
+                                           str(np.round(np.std(trcecl.amplitudes), 2)))
+        splt.legend(handles=[ttl], fontsize=6)
+
+        splt = fig.add_subplot(326)
+        n, bins, patches = plt.hist(trcecl.taus, num_bins, normed=1, facecolor='blue', alpha=0.5)
+        y = mlab.normpdf(bins, np.mean(trcecl.taus), np.std(trcecl.taus))
+        splt.plot(bins, y, 'r--')
+        ttl = pch.Patch(color='red', label='Tau \n mean:' + \
+                                           str(np.round(np.mean(trcecl.taus), 2)) + '\n sd:' + \
+                                           str(np.round(np.std(trcecl.taus), 2)))
+        splt.legend(handles=[ttl], fontsize=6)
+
+        save_path = os.path.join(args.out, trce.sheetname + '_histograms.png')
+        plt.savefig(save_path, dpi=300)
+        plt.close()
+
+        #
+        # Save all distances as CSV
+        #
+        csv_path = os.path.join(args.out, trce.sheetname + '_risetime.csv')
+        np.savetxt(csv_path, np.array(trcecl.rise_ts), fmt='%.3f', delimiter=",")
+
+        csv_path = os.path.join(args.out, trce.sheetname + '_t10.csv')
+        np.savetxt(csv_path, np.array(trcecl.t10s), fmt='%.3f', delimiter=",")
+
+        csv_path = os.path.join(args.out, trce.sheetname + '_t50.csv')
+        np.savetxt(csv_path, np.array(trcecl.t50s), fmt='%.3f', delimiter=",")
+
+        csv_path = os.path.join(args.out, trce.sheetname + '_t90.csv')
+        np.savetxt(csv_path, np.array(trcecl.t90s), fmt='%.3f', delimiter=",")
+
+        csv_path = os.path.join(args.out, trce.sheetname + '_amplitude.csv')
+        np.savetxt(csv_path, np.array(trcecl.amplitudes), fmt='%.3f', delimiter=",")
+
+        csv_path = os.path.join(args.out, trce.sheetname + '_tau.csv')
+        np.savetxt(csv_path, np.array(trcecl.taus), fmt='%.3f', delimiter=",")
+
+
 
 
 
