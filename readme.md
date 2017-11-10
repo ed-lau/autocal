@@ -2,10 +2,13 @@ Calcium and Sarcomere Trace Analyzer (AutoCal) v.0.2.0
 ======================================================
 
 Requirements:
+- Python3.6
+
+Instructions
 
 	* Install Python 3.6+
 	See instructions on Python website for specific instructions for your operating system
-	Python 3.5 should come with the package manager PIP
+	Python 3.6 should come with the package manager PIP
 
     * Set up a Virtual Environment for AutoCal
 		$ python3.6 -m venv ~/autocal
