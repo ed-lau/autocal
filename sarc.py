@@ -21,7 +21,7 @@ def sarcomere(args):
     """
     Measure sarcomere length
 
-    Usage: python sarcomere_custom.py 'data/sarcomere/Expn24 sarcomer length 204 copy.xlsx' '204' -o sarcomere_out
+    Usage: python sarc.py 'data/sarcomere/Expn24 sarcomer length 204 copy.xlsx' '204' -o sarcomere_out
 
     path =
     workbook_name = '204'
@@ -97,7 +97,7 @@ def sarcomere(args):
             #
 
             # Peak detection tolerance parameters (these will be specifiable in argparse later).
-            y_tolerance = 0.1
+            y_tolerance = args.y_tol
             x_tolerance = 5
 
             # List of times when the traces begin to rise, and stops rising
@@ -134,7 +134,7 @@ def sarcomere(args):
 
             # Plot out the figures
             fig = plt.figure()
-            fig.suptitle('workbook' + workbook_name + 'sheet ' + sheetname + ' column ' + str(colname), fontsize=14)
+            fig.suptitle('workbook: ' + workbook_name + ' sheet: ' + sheetname + ' column: ' + str(colname), fontsize=14)
 
             # Plot out raw traces
             splt = fig.add_subplot(311)
@@ -180,25 +180,25 @@ def sarcomere(args):
 
             # Create directory if not exists
             os.makedirs(out, exist_ok=True)
-            save_path = os.path.join(out, workbook_name + sheetname + str(colname) + '.png')
+            save_path = os.path.join(out, workbook_name + '_' + sheetname + '_' + str(colname) + '.png')
             fig.savefig(save_path, dpi=300)
             plt.close()
 
         #
         # For each sheet, plot out histogram of all measured distances
         #
-        num_bins = 15
+        num_bins = len(sarcomere_dists)//3      # Vary number of bins by length of sarcomere_dists
         n, bins, patches = plt.hist(sarcomere_dists, num_bins, normed=1, facecolor='blue', alpha=0.5)
         y = mlab.normpdf(bins, np.mean(sarcomere_dists), np.std(sarcomere_dists))
         plt.plot(bins, y, 'r--')
 
-        label_text = 'workbook' + workbook_name + 'sheet ' + sheetname + '\n' +\
+        label_text = 'workbook: ' + workbook_name + ' sheet: ' + sheetname + '\n' +\
                      'n: ' + str(len(sarcomere_dists)) + \
                      ' mean: ' + str(round(np.mean(sarcomere_dists),3)) +\
                      ' sd: ' + str(round(np.std(sarcomere_dists),3))
 
         plt.title(label_text, fontsize=14)
-        save_path = os.path.join(out, workbook_name + sheetname + '_histogram.png')
+        save_path = os.path.join(out, workbook_name + '_' + sheetname + '_histogram.png')
         plt.savefig(save_path, dpi=300)
 
         plt.close()
@@ -206,7 +206,7 @@ def sarcomere(args):
         #
         # Save all distances as CSV
         #
-        csv_path = os.path.join(out, workbook_name + sheetname + '.csv')
+        csv_path = os.path.join(out, workbook_name + '_' + sheetname + '.csv')
 
         np.savetxt(csv_path, np.array(sarcomere_dists), fmt='%.3f', delimiter=",")
 
@@ -224,6 +224,8 @@ if __name__ == "__main__":
 
     parser.add_argument('path', help='path to sarcomere imaging spreadsheet')
     parser.add_argument('workbook_name', help='name of workbook')
+    parser.add_argument('-y', '--y_tol', help='y tolerance for peak detection',
+                        type=float, default=0.1)
     parser.add_argument('-o', '--out', help='path to output files',
                               default='out')
     parser.add_argument('-v', '--verbose', action='store_true', help='verbose error messages.')
