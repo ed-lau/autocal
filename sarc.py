@@ -32,13 +32,13 @@ def sarcomere(args):
     :return:
     """
 
+    # Making variables from argparse
     path = args.path
     workbook_name = args.workbook_name
     out = args.out
 
     # Read the Excel file
     xl0 = xl.load_workbook(filename=path)
-
 
     # Get all the sheets, for each sheet
     for sheetname in xl0.get_sheet_names():
@@ -61,20 +61,11 @@ def sarcomere(args):
         i_cols = [d_col + 1 for d_col in d_cols]
 
 
-        # Initiate column names
-        colname = 0
-
         # Initiate the storage for all the distance reads within this particular sheet (read)
         sarcomere_dists = []
 
         # Loop through the data columns and for each column make a Trace object
         for d_col in d_cols:
-
-            colname += 1
-
-            # Print out current sheet and column name if verbose
-            if args.verbose:
-                print('verbosity 1: Now analyzing sheet: ' + sheetname + ' column: ' + str(colname))
 
             dist = [cell.value for cell in cols[d_col]]
             read = [cell.value for cell in cols[d_col+1]]
@@ -86,6 +77,16 @@ def sarcomere(args):
             # Remove empty cells - assuming right now that every dist (X) column has corresponding read (Y)
             dist = [x for x in dist if x is not None]
             read = [y for y in read if y is not None]
+
+            # If there is no data left, skip this column
+            if not dist:
+                continue
+
+            # Print out current sheet and column name if verbose
+            if args.verbose:
+                print('verbosity 1: now analyzing sheet: ' + sheetname + ' column: ' + str(d_cols.index(d_col)+1))
+
+
 
             assert len(dist) == len(read), "Length of X and Y are not the same in this column."
 
@@ -139,7 +140,8 @@ def sarcomere(args):
 
             # Plot out the figures
             fig = plt.figure()
-            fig.suptitle('workbook: ' + workbook_name + ' sheet: ' + sheetname + ' column: ' + str(colname), fontsize=14)
+            fig.suptitle('workbook: ' + workbook_name + ' sheet: ' +
+                         sheetname + ' column: ' + str(d_cols.index(d_col)+1), fontsize=14)
 
             # Plot out raw traces
             splt = fig.add_subplot(311)
@@ -185,7 +187,8 @@ def sarcomere(args):
 
             # Create directory if not exists
             os.makedirs(out, exist_ok=True)
-            save_path = os.path.join(out, workbook_name + '_' + sheetname + '_' + str(colname) + '.png')
+            save_path = os.path.join(out, workbook_name + '_' + sheetname + '_' +
+                                     str(d_cols.index(d_col)+1) + '.png')
             fig.savefig(save_path, dpi=300)
             plt.close()
 
