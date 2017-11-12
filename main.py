@@ -100,8 +100,8 @@ def parsefile(args):
             #
 
             # Peak detection tolerance parameters (these will be specifiable in argparse later).
-            y_tolerance = 0.0005
-            x_tolerance = 10
+            x_tolerance = args.x_tol
+            y_tolerance = args.y_tol
 
             # List of times when the traces begin to rise, and stops rising
             rise_starts = []
@@ -370,8 +370,10 @@ if __name__ == "__main__":
     parser.add_argument('path', help='path to calcium imaging spreadsheet')
     parser.add_argument('-o', '--out', help='path to output files',
                               default='out')
-    parser.add_argument('-y', '--y_tol', help='y tolerance for peak detection',
-                        type=float, default=0.1)
+    parser.add_argument('-x', '--x_tol', help='X tolerance for peak detection (integer).',
+                        type=int, default=10)
+    parser.add_argument('-y', '--y_tol', help='Y tolerance for peak detection (float).',
+                        type=float, default=0.0005)
     parser.add_argument('-v', '--verbose', action='store_true', help='verbose error messages.')
 
     parser.set_defaults(func=parsefile)
