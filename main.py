@@ -370,6 +370,8 @@ if __name__ == "__main__":
     parser.add_argument('path', help='path to calcium imaging spreadsheet')
     parser.add_argument('-o', '--out', help='path to output files',
                               default='out')
+    parser.add_argument('-y', '--y_tol', help='y tolerance for peak detection',
+                        type=float, default=0.1)
     parser.add_argument('-v', '--verbose', action='store_true', help='verbose error messages.')
 
     parser.set_defaults(func=parsefile)
