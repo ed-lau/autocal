@@ -68,8 +68,9 @@ def parsefile(args):
                                          dt=d[1:],
                                          bg=bck[1:])
 
-            # Print the trace via the pretty print function defined in class (not fully implemented).
-            print(trce)
+            # If verbose, print the trace via the pretty print function defined in class (not fully implemented).
+            if args.verbose:
+                print(trce)
 
             # For the newly created Trace object, create the 340/380 ratio from raw trace data
             trce.make_ratio()
@@ -266,7 +267,6 @@ def parsefile(args):
             fig.savefig(save_path, dpi=300)
             plt.close()
 
-
         num_bins = 10
         fig = plt.figure()
         fig.suptitle(trce.sheetname , fontsize=14)
@@ -363,7 +363,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
                                      description='''\
-    CalcTau v.0.2.0
+    Autocal v.0.2.0
     Edward Lau 2017 - lau1@stanford.edu
     Reads calcium trace data and fits kinetic curves.''')
 

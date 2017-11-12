@@ -236,7 +236,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
                                      description='''\
-    Sarcomeric Module v.0.0.5
+    Sarcomeric Module v.0.2.0
     Edward Lau 2017 - lau1@stanford.edu
     Reads sarcomere trace data and outputs spacing statistics.''')
 
