@@ -104,7 +104,7 @@ def sarcomere(args):
 
             # Peak detection tolerance parameters (these will be specifiable in argparse later).
             y_tolerance = args.y_tol
-            x_tolerance = 5
+            x_tolerance = args.x_tol
 
             # List of times when the traces begin to rise, and stops rising
             rise_starts = []
@@ -242,7 +242,9 @@ if __name__ == "__main__":
 
     parser.add_argument('path', help='path to sarcomere imaging spreadsheet')
     parser.add_argument('workbook_name', help='name of workbook')
-    parser.add_argument('-y', '--y_tol', help='y tolerance for peak detection',
+    parser.add_argument('-x', '--x_tol', help='x tolerance for peak detection (integer).',
+                        type=int, default=5)
+    parser.add_argument('-y', '--y_tol', help='y tolerance for peak detection (float).',
                         type=float, default=0.1)
     parser.add_argument('-o', '--out', help='path to output files',
                               default='out')
