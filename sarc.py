@@ -57,7 +57,7 @@ def sarcomere(args):
         # Manually take only the first eight columns
 
         # Specify which columns contain data on the distance, and which one the intensity
-        d_cols = list(range(0,8,2))
+        d_cols = list(range(0, len(cols), 2))
         i_cols = [d_col + 1 for d_col in d_cols]
 
 
@@ -71,7 +71,10 @@ def sarcomere(args):
         for d_col in d_cols:
 
             colname += 1
-            print(colname)
+
+            # Print out current sheet and column name if verbose
+            if args.verbose:
+                print('verbosity 1: Now analyzing sheet: ' + sheetname + ' column: ' + str(colname))
 
             dist = [cell.value for cell in cols[d_col]]
             read = [cell.value for cell in cols[d_col+1]]
@@ -89,7 +92,9 @@ def sarcomere(args):
             read_smooth = sg.savitzky_golay(np.array(read), 13, 3)
 
             read_deriv = np.diff(read_smooth)
-            read_deriv2 = np.diff(read_deriv)
+
+            # Get second derivative
+            #read_deriv2 = np.diff(read_deriv)
 
 
             #
@@ -187,28 +192,38 @@ def sarcomere(args):
         #
         # For each sheet, plot out histogram of all measured distances
         #
-        num_bins = len(sarcomere_dists)//3      # Vary number of bins by length of sarcomere_dists
-        n, bins, patches = plt.hist(sarcomere_dists, num_bins, normed=1, facecolor='blue', alpha=0.5)
-        y = mlab.normpdf(bins, np.mean(sarcomere_dists), np.std(sarcomere_dists))
-        plt.plot(bins, y, 'r--')
 
-        label_text = 'workbook: ' + workbook_name + ' sheet: ' + sheetname + '\n' +\
-                     'n: ' + str(len(sarcomere_dists)) + \
-                     ' mean: ' + str(round(np.mean(sarcomere_dists),3)) +\
-                     ' sd: ' + str(round(np.std(sarcomere_dists),3))
+        # Print out current sheet and column name if verbose
+        if args.verbose:
+            print('verbosity 1: sheet completed. no. of sarcomere distances quantified: ' + str(len(sarcomere_dists)))
 
-        plt.title(label_text, fontsize=14)
-        save_path = os.path.join(out, workbook_name + '_' + sheetname + '_histogram.png')
-        plt.savefig(save_path, dpi=300)
+        # If there was any sarcomere distance from this sheet, print out histogram
+        if len(sarcomere_dists) > 0:
+            num_bins = len(sarcomere_dists)//3      # Vary number of bins by length of sarcomere_dists
+            n, bins, patches = plt.hist(sarcomere_dists, num_bins, normed=1, facecolor='blue', alpha=0.5)
+            y = mlab.normpdf(bins, np.mean(sarcomere_dists), np.std(sarcomere_dists))
+            plt.plot(bins, y, 'r--')
 
-        plt.close()
+            label_text = 'workbook: ' + workbook_name + ' sheet: ' + sheetname + '\n' +\
+                         'n: ' + str(len(sarcomere_dists)) + \
+                         ' mean: ' + str(round(np.mean(sarcomere_dists),3)) +\
+                         ' sd: ' + str(round(np.std(sarcomere_dists),3))
 
-        #
-        # Save all distances as CSV
-        #
-        csv_path = os.path.join(out, workbook_name + '_' + sheetname + '.csv')
+            plt.title(label_text, fontsize=14)
+            save_path = os.path.join(out, workbook_name + '_' + sheetname + '_histogram.png')
+            plt.savefig(save_path, dpi=300)
 
-        np.savetxt(csv_path, np.array(sarcomere_dists), fmt='%.3f', delimiter=",")
+            plt.close()
+
+            #
+            # Save all distances as CSV
+            #
+            csv_path = os.path.join(out, workbook_name + '_' + sheetname + '.csv')
+
+            np.savetxt(csv_path, np.array(sarcomere_dists), fmt='%.3f', delimiter=",")
+
+        else:
+            pass
 
 #
 # Code for running main with parsed arguments from command line
