@@ -374,6 +374,8 @@ if __name__ == "__main__":
                         type=int, default=10)
     parser.add_argument('-y', '--y_tol', help='Y tolerance for peak detection (float).',
                         type=float, default=0.0005)
+    parser.add_argument('-b', '--bg', help='Index of background column.',
+                        type=int, default=-1)
     parser.add_argument('-v', '--verbose', action='store_true', help='verbose error messages.')
 
     parser.set_defaults(func=parsefile)
