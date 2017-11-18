@@ -49,9 +49,17 @@ def parsefile(args):
             cols.append(col)
 
         # Specify which columns contain data on the time, background, and data?
-        b_cols = 15
+        b_cols = args.bg # This should be -1 or 15
         t_cols = 1
-        d_cols = range(5, 15)
+        d_cols = list(range(5, len(cols)))
+
+        # Remove the background column from the list of data columns
+        if args.bg == -1:
+            del d_cols[b_cols]
+
+        else:
+            del d_cols[b_cols - d_cols[0]]
+
 
         # Get background and time data in the form of lists via list comprehension
         bck = [cell.value for cell in cols[b_cols]]
@@ -65,15 +73,17 @@ def parsefile(args):
             trce = caltrace.CalciumTrace(sheetname=sheetname,
                                          colname=d[0],
                                          tm=t[1:],
-                                         dt=d[1:],
-                                         bg=bck[1:])
+                                         raw_dt=d[1:],
+                                         bg=bck[1:],
+                                         )
 
             # If verbose, print the trace via the pretty print function defined in class (not fully implemented).
             if args.verbose:
                 print(trce)
 
             # For the newly created Trace object, create the 340/380 ratio from raw trace data
-            trce.make_ratio()
+            # cor_bg controls whether to subtract background
+            trce.make_ratio(correct_background=args.cor_bg)
 
             while_counter = 1
             # Smoothen, get derivative, check whether derivative is below 0, if not, flip then smoothen again
@@ -154,7 +164,7 @@ def parsefile(args):
             #
 
             fig = plt.figure()
-            fig.suptitle(trce.sheetname + trce.colname, fontsize=14)
+            fig.suptitle('Sheet: ' + trce.sheetname + ' Column: ' + trce.colname, fontsize=14)
 
             splt = fig.add_subplot(511)
             splt.plot(trce.median_time, trce.ratio)
@@ -269,7 +279,7 @@ def parsefile(args):
 
         num_bins = 10
         fig = plt.figure()
-        fig.suptitle(trce.sheetname , fontsize=14)
+        fig.suptitle(trce.sheetname, fontsize=14)
 
         splt = fig.add_subplot(321)
         n, bins, patches = plt.hist(trcecl.rise_ts, num_bins, normed=1, facecolor='blue', alpha=0.5)
@@ -374,6 +384,8 @@ if __name__ == "__main__":
                         type=int, default=10)
     parser.add_argument('-y', '--y_tol', help='Y tolerance for peak detection (float).',
                         type=float, default=0.0005)
+    parser.add_argument('-c', '--cor_bg', help='Correct background.',
+                        action='store_true')
     parser.add_argument('-b', '--bg', help='Index of background column.',
                         type=int, default=-1)
     parser.add_argument('-v', '--verbose', action='store_true', help='verbose error messages.')

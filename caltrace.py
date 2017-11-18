@@ -13,19 +13,18 @@ class CalciumTrace(object):
 
     """
 
-    def __init__(self, sheetname, colname, tm, dt, bg):
+    def __init__(self, sheetname, colname, tm, raw_dt, bg):
         """
 
-        :param sheetname:
-        :param colname:
-        :param tm:  a list holding time information
-        :param dt:  a list holding calcium data (both 340 and 380 nm)
-        :param bg:  a list holding background
-
+        :param sheetname:   Sheet name
+        :param colname:     Column name
+        :param tm:          A list holding time information
+        :param dt:          A list holding calcium data (both 340 and 380 nm)
+        :param bg:          A list holding background
         """
 
-        assert len(dt) == len(tm) and len(dt) == len(bg), 'Dimension mismatch in data/background/time!!'
-        assert len(dt) % 2 == 0, 'Number of rows not even - check data file!!'
+        assert len(raw_dt) == len(tm) and len(raw_dt) == len(bg), 'Dimension mismatch in data/background/time!!'
+        assert len(raw_dt) % 2 == 0, 'Number of rows not even - check data file!!'
 
         import re
 
@@ -33,7 +32,8 @@ class CalciumTrace(object):
         self.sheetname = re.sub(r'[^\w\\P]', '', sheetname)
         self.colname = re.sub(r'[^\w\\P]', '', colname)
         self.tm = tm
-        self.dt = dt
+        self.raw_dt = raw_dt    # Prior to background subtraction
+        self.dt = raw_dt        # Will be modified after background subtraction in make_ratio()
         self.bg = bg
 
         # Private
@@ -52,12 +52,37 @@ class CalciumTrace(object):
         """
         return ('Trace object with ' + str(len(self.tm)) + ' rows.')
 
-    def make_ratio(self):
+    def make_ratio(self, correct_background=False, smooth_background=True):
         """
         Divide 340 nm and 380 trace to make ratio trace and take median time of successive measurements
 
+        :param correct_background:      T/F Whether to subtract the raw data with the background column
+        :param smooth_background:       T/F Whether to smooth the background prior to subraction
         :return: True
         """
+
+        import sg
+        import numpy as np
+
+        assert len(self.raw_dt) == len(self.bg), 'Background array different in length than data'
+
+        # Correct data by subtracting from background
+        if correct_background:
+            if smooth_background:
+
+                # Separate the 340 and 380 nm into separate tracks and smooth
+                bg_smooth1 = sg.savitzky_golay(np.array(self.bg[::2]), 51, 3)
+                bg_smooth2 = sg.savitzky_golay(np.array(self.bg[1::2]), 51, 3)
+
+                # Interweave the smoothened tracks back together
+                bg_smooth = []
+                for (value1, value2) in zip(bg_smooth1, bg_smooth2):
+                    bg_smooth.extend([value1, value2])
+
+            elif not smooth_background:
+                self.dt = [self.raw_dt[i] - self.bg[i] for i in range(len(self.raw_dt))]
+
+
 
         # Taking ratio of every other reading (340 nm) over the immediate following reading (280 nm)
         self.ratio = [self.dt[0::2][i] / self.dt[1::2][i] for i in range(len(self.dt[0::2]))]
