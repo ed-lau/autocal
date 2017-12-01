@@ -246,6 +246,8 @@ if __name__ == "__main__":
                         type=int, default=5)
     parser.add_argument('-y', '--y_tol', help='y tolerance for peak detection (float).',
                         type=float, default=0.1)
+    parser.add_argument('-min', help='detect minima rather than maxima for distance calculation',
+                        action='store_true')
     parser.add_argument('-o', '--out', help='path to output files',
                               default='out')
     parser.add_argument('-v', '--verbose', action='store_true', help='verbose error messages.')
