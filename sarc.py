@@ -22,6 +22,8 @@ def sarcomere(args):
     Measure sarcomere length
 
     Usage: python sarc.py 'data/sarcomere/Expn24 sarcomer length 204 copy.xlsx' '204' -o sarcomere_out
+    Usage: python sarc.py 'data/sarcomere/Expn2 Stress pattern 100x-1.xlsx' 'Expn2100x' -o expn2100x_out
+
 
     path =
     workbook_name = '204'
@@ -93,6 +95,10 @@ def sarcomere(args):
             read_smooth = sg.savitzky_golay(np.array(read), 13, 3)
 
             read_deriv = np.diff(read_smooth)
+
+            # Flip the derivatives if minima are sought
+            if args.min:
+                read_deriv *= -1
 
             # Get second derivative
             #read_deriv2 = np.diff(read_deriv)
