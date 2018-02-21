@@ -150,7 +150,7 @@ def parsefile(args):
             trcecl.rise_ts += rise_t
 
             #
-            # Rise amplitudes are the corresonding increase in ratios during the same intervals
+            # Rise amplitudes are the corresponding increase in ratios during the same intervals
             #
 
             amplitude = [trce.ratio[rise_ends[i]] - trce.ratio[rise_starts[i]] for i in
