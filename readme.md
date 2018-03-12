@@ -1,14 +1,13 @@
-Calcium and Sarcomere Trace Analyzer (AutoCal) v.0.2.0
-======================================================
+# Calcium and Sarcomere Trace Analyzer (AutoCal) v.0.2.0
 
-Requirements:
-- Python3.6
+AutoCal is a python program for integrating calcium imaging traces from TI50 Fura-2AM images. 
 
-Instructions
+## Getting Started
 
+To install:
 	* Install Python 3.6+
-	See instructions on Python website for specific instructions for your operating system
-	Python 3.6 should come with the package manager PIP
+		See instructions on Python website for specific instructions for your operating system
+		Python 3.6 should come with the package manager PIP
 
     * Set up a Virtual Environment for AutoCal
 		$ python3.6 -m venv ~/autocal
@@ -17,7 +16,7 @@ Instructions
 	* Install the packages in the requirements.txt file
 		$ pip3 install -r requirements.txt
 
-Running
+To run:
 	
 	* Launch AutoCal (Usage/Help)
 		$ python main.py
@@ -28,10 +27,39 @@ Running
 		$ deactivate
 
 
-Input files
+### Prerequisites
 
-	* AutoCal takes in standard Calcium traces from TI50 Fura-2AM imaging. 
+AutoCal requires the following:
+
+```
+Python 3.6
+
+```
 
 
-Contact: Edward Lau
-lau1@stanford.edu
+## Contributing
+
+Please contact us if you wish to contribute, and submit pull requests to us.
+
+
+## Versioning
+
+We use [SemVer](http://semver.org/) for versioning.
+
+
+## Authors
+
+* **Edward Lau, PhD** - *Code* - [ed-lau](https://github.com/ed-lau)
+
+
+See also the list of [contributors](https://github.com/ed-lau/autocal/graphs/contributors) who participated in this project.
+
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+
+
+## Acknowledgments
+
+* [PurpleBooth](https://github.com/PurpleBooth) for Github Readme template.
